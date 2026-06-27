@@ -1,0 +1,49 @@
+{
+  "expo": {
+    "name": "Cheezy",
+    "slug": "cheezy",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "scheme": "cheezy",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#FFF8E7"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "be.mobilevikings.cheezy"
+    },
+    "android": {
+      "package": "be.mobilevikings.cheezy",
+      "versionCode": 1,
+      "adaptiveIcon": {
+        "backgroundColor": "#F6A623",
+        "foregroundImage": "./assets/adaptive-icon.png"
+      }
+    },
+    "plugins": [
+      "expo-router",
+      "expo-font",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/notification-icon.png",
+          "color": "#F6A623"
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Cheezy heeft toegang tot je foto's nodig om kaasfotos toe te voegen.",
+          "cameraPermission": "Cheezy heeft toegang tot je camera nodig om een foto te maken van de kaas."
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}
