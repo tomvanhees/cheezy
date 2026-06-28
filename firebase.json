@@ -1,4 +1,12 @@
 {
+  "auth": {
+    "providers": {
+      "googleSignIn": {
+        "oAuthBrandDisplayName": "Cheezy",
+        "supportEmail": "tom.vanhees@mobilevikings.be"
+      }
+    }
+  },
   "functions": {
     "source": "functions",
     "codebase": "default",

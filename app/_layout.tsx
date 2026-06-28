@@ -52,7 +52,9 @@ export default function RootLayout() {
             contentStyle: { backgroundColor: Colors.background },
             animation: 'slide_from_right',
           }}
-        />
+        >
+          <Stack.Screen name="cheeses" options={{ headerShown: false }} />
+        </Stack>
       </UserProvider>
     </QueryClientProvider>
   );

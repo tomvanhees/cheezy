@@ -8,20 +8,22 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "splash": {
-      "image": "./assets/splash.png",
+      "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
       "backgroundColor": "#FFF8E7"
     },
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "be.mobilevikings.cheezy"
+      "bundleIdentifier": "com.tomvanhees.cheezy"
     },
     "android": {
-      "package": "be.mobilevikings.cheezy",
+      "package": "com.tomvanhees.cheezy",
       "versionCode": 1,
+      "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
-        "backgroundColor": "#F6A623",
-        "foregroundImage": "./assets/adaptive-icon.png"
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
       }
     },
     "plugins": [
@@ -30,7 +32,7 @@
       [
         "expo-notifications",
         {
-          "icon": "./assets/notification-icon.png",
+          "icon": "./assets/android-icon-monochrome.png",
           "color": "#F6A623"
         }
       ],

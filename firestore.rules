@@ -7,7 +7,7 @@ service cloud.firestore {
       allow write: if false;
     }
 
-    // Users — anyone can read/write (no auth; personal family app)
+    // Users — anyone can read/write (trusted family app, no auth required)
     match /users/{userId} {
       allow read, write: if true;
     }
@@ -16,7 +16,6 @@ service cloud.firestore {
     match /cheeses/{cheeseId} {
       allow read, write: if true;
 
-      // Ratings sub-collection
       match /ratings/{userId} {
         allow read, write: if true;
       }

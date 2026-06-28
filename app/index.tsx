@@ -9,7 +9,7 @@ import {
   Platform,
   ActivityIndicator,
 } from 'react-native';
-import { router } from 'expo-router';
+import { router, Stack } from 'expo-router';
 import { useUser, generateUserId, pickUserColor } from '@/context/UserContext';
 import { CheeseWedgeSvg } from '@/components/CheeseWedgeSvg';
 import { Colors, Fonts, Radius } from '@/lib/theme';
@@ -22,7 +22,6 @@ export default function OnboardingScreen() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
-  // Already onboarded — go straight to the cheese list
   React.useEffect(() => {
     if (!isLoading && user) {
       router.replace('/cheeses');
@@ -47,7 +46,6 @@ export default function OnboardingScreen() {
     try {
       await ensureSchema();
 
-      // Pick a color not already used by existing users
       const existingUsers = await new Promise<{ color: string }[]>((resolve) => {
         const unsub = subscribeToUsers((users) => {
           unsub();
@@ -78,6 +76,7 @@ export default function OnboardingScreen() {
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
+      <Stack.Screen options={{ headerShown: false }} />
       <View style={styles.hero}>
         <CheeseWedgeSvg size={150} />
         <Text style={styles.title}>Cheezy</Text>

@@ -65,7 +65,10 @@ export default function CheeseListScreen() {
   const [sort, setSort] = useState<SortOption>('consensus');
   const [textureFilter, setTextureFilter] = useState<string[]>([]);
   const [milkFilter, setMilkFilter] = useState<string[]>([]);
-  const [showFilters, setShowFilters] = useState(false);
+  const [openPanel, setOpenPanel] = useState<'sort' | 'filter' | null>(null);
+
+  const togglePanel = (panel: 'sort' | 'filter') =>
+    setOpenPanel((prev) => (prev === panel ? null : panel));
 
   const cheesesWithRatings = useMemo(
     () => cheeses.map((c) => ({ ...c, ratings: ratingsMap[c.id] ?? [] })),
@@ -103,36 +106,48 @@ export default function CheeseListScreen() {
       />
 
       <View style={styles.container}>
-        {/* Sort bar */}
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.sortBar}
-        >
-          {SORT_OPTIONS.map((opt) => (
-            <Pressable
-              key={opt.value}
-              style={[styles.sortChip, sort === opt.value && styles.sortChipActive]}
-              onPress={() => setSort(opt.value)}
-            >
-              <Text style={[styles.sortChipText, sort === opt.value && styles.sortChipTextActive]}>
-                {opt.label}
-              </Text>
-            </Pressable>
-          ))}
+        {/* Toolbar */}
+        <View style={styles.toolbar}>
           <Pressable
-            style={[styles.sortChip, activeFilterCount > 0 && styles.sortChipActive]}
-            onPress={() => setShowFilters((v) => !v)}
+            style={[styles.toolbarBtn, openPanel === 'sort' && styles.toolbarBtnActive]}
+            onPress={() => togglePanel('sort')}
           >
-            <Text style={[styles.sortChipText, activeFilterCount > 0 && styles.sortChipTextActive]}>
-              {activeFilterCount > 0 ? `Filters (${activeFilterCount})` : 'Filters'}
+            <Text style={[styles.toolbarBtnText, openPanel === 'sort' && styles.toolbarBtnTextActive]}>
+              {SORT_OPTIONS.find((o) => o.value === sort)?.label ?? 'Sortering'} ▾
             </Text>
           </Pressable>
-        </ScrollView>
+
+          <Pressable
+            style={[styles.toolbarBtn, (openPanel === 'filter' || activeFilterCount > 0) && styles.toolbarBtnActive]}
+            onPress={() => togglePanel('filter')}
+          >
+            <Text style={[styles.toolbarBtnText, (openPanel === 'filter' || activeFilterCount > 0) && styles.toolbarBtnTextActive]}>
+              {activeFilterCount > 0 ? `Filter (${activeFilterCount})` : 'Filter'} ▾
+            </Text>
+          </Pressable>
+        </View>
+
+        {/* Sort panel */}
+        {openPanel === 'sort' && (
+          <View style={styles.panel}>
+            {SORT_OPTIONS.map((opt) => (
+              <Pressable
+                key={opt.value}
+                style={[styles.panelRow, sort === opt.value && styles.panelRowActive]}
+                onPress={() => { setSort(opt.value); setOpenPanel(null); }}
+              >
+                <Text style={[styles.panelRowText, sort === opt.value && styles.panelRowTextActive]}>
+                  {opt.label}
+                </Text>
+                {sort === opt.value && <Text style={styles.checkmark}>✓</Text>}
+              </Pressable>
+            ))}
+          </View>
+        )}
 
         {/* Filter panel */}
-        {showFilters && (
-          <View style={styles.filterPanel}>
+        {openPanel === 'filter' && (
+          <View style={styles.panel}>
             <Text style={styles.filterLabel}>Textuur</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterRow}>
               {TEXTURE_FILTERS.map((f) => (
@@ -226,39 +241,66 @@ const styles = StyleSheet.create({
     color: Colors.textSecondary,
     marginRight: 8,
   },
-  sortBar: {
+  toolbar: {
+    flexDirection: 'row',
     paddingHorizontal: 16,
     paddingVertical: 10,
     gap: 8,
-    flexDirection: 'row',
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border,
   },
-  sortChip: {
+  toolbarBtn: {
     borderRadius: Radius.full,
-    paddingHorizontal: 14,
+    paddingHorizontal: 16,
     paddingVertical: 7,
     backgroundColor: Colors.surface,
     borderWidth: 1.5,
     borderColor: Colors.border,
   },
-  sortChipActive: {
+  toolbarBtnActive: {
     backgroundColor: Colors.primary,
     borderColor: Colors.primary,
   },
-  sortChipText: {
+  toolbarBtnText: {
     fontFamily: Fonts.bodySemiBold,
     fontSize: 13,
     color: Colors.textSecondary,
   },
-  sortChipTextActive: {
+  toolbarBtnTextActive: {
     color: '#FFFFFF',
   },
-  filterPanel: {
+  panel: {
     backgroundColor: Colors.surface,
     paddingHorizontal: 16,
     paddingVertical: 12,
     gap: 8,
     borderBottomWidth: 1,
     borderBottomColor: Colors.border,
+  },
+  panelRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 4,
+    borderRadius: Radius.sm,
+  },
+  panelRowActive: {
+    backgroundColor: `${Colors.primary}15`,
+  },
+  panelRowText: {
+    fontFamily: Fonts.body,
+    fontSize: 15,
+    color: Colors.text,
+  },
+  panelRowTextActive: {
+    fontFamily: Fonts.bodyBold,
+    color: Colors.primary,
+  },
+  checkmark: {
+    fontSize: 15,
+    color: Colors.primary,
+    fontFamily: Fonts.bodyBold,
   },
   filterLabel: {
     fontFamily: Fonts.bodySemiBold,
