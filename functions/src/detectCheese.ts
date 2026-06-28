@@ -14,6 +14,9 @@ interface DetectedCheese {
   texture: 'vers' | 'zacht' | 'halfzacht' | 'halfhard' | 'hard' | null;
   milkType: 'koe' | 'geit' | 'schaap' | 'buffel' | 'gemengd' | null;
   origin: string | null;
+  cheeseFamily: string | null;
+  agingPeriod: string | null;
+  producer: string | null;
   confidence: 'hoog' | 'laag';
 }
 
@@ -24,6 +27,9 @@ Geef een JSON-object terug (geen uitleg, alleen JSON) met:
 - "texture": een van "vers", "zacht", "halfzacht", "halfhard", "hard", of null als onbekend
 - "milkType": een van "koe", "geit", "schaap", "buffel", "gemengd", of null als onbekend
 - "origin": land of regio van herkomst in het Nederlands (bijv. "Frankrijk — Normandie"), of null als onbekend
+- "cheeseFamily": het kaastype in het Nederlands (bijv. "Blauwschimmelkaas", "Witschimmelkaas", "Harde kaas", "Gewassenkorstkaas"), of null als onbekend
+- "agingPeriod": de rijpingstijd in het Nederlands (bijv. "Jong", "Belegen", "Oud", "Extra oud"), of null als onbekend
+- "producer": de naam van de producent of het merk (bijv. "Beemster", "President"), of null als onbekend
 - "confidence": "hoog" als je zeker bent, "laag" als je gokt
 
 Als je geen kaas kunt herkennen, zet dan "name" op null.`;
@@ -31,20 +37,27 @@ Als je geen kaas kunt herkennen, zet dan "name" op null.`;
 const VALID_TEXTURES = new Set(['vers', 'zacht', 'halfzacht', 'halfhard', 'hard']);
 const VALID_MILK_TYPES = new Set(['koe', 'geit', 'schaap', 'buffel', 'gemengd']);
 
+function str(v: unknown): string | null {
+  return typeof v === 'string' && v.length > 0 ? v : null;
+}
+
 function sanitize(raw: unknown): DetectedCheese {
   if (typeof raw !== 'object' || raw === null) {
-    return { name: null, texture: null, milkType: null, origin: null, confidence: 'laag' };
+    return { name: null, texture: null, milkType: null, origin: null, cheeseFamily: null, agingPeriod: null, producer: null, confidence: 'laag' };
   }
   const r = raw as Record<string, unknown>;
   return {
-    name: typeof r.name === 'string' && r.name.length > 0 ? r.name : null,
+    name: str(r.name),
     texture: VALID_TEXTURES.has(r.texture as string)
       ? (r.texture as DetectedCheese['texture'])
       : null,
     milkType: VALID_MILK_TYPES.has(r.milkType as string)
       ? (r.milkType as DetectedCheese['milkType'])
       : null,
-    origin: typeof r.origin === 'string' && r.origin.length > 0 ? r.origin : null,
+    origin: str(r.origin),
+    cheeseFamily: str(r.cheeseFamily),
+    agingPeriod: str(r.agingPeriod),
+    producer: str(r.producer),
     confidence: r.confidence === 'hoog' ? 'hoog' : 'laag',
   };
 }

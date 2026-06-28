@@ -11,6 +11,7 @@ import {
   Alert,
 } from 'react-native';
 import { router, Stack } from 'expo-router';
+import { useQuery } from '@tanstack/react-query';
 import * as ImagePicker from 'expo-image-picker';
 import { useUser } from '@/context/UserContext';
 import { useAddCheese } from '@/hooks/useCheeses';
@@ -19,7 +20,8 @@ import { ChipPicker } from '@/components/ChipPicker';
 import { OriginPicker } from '@/components/OriginPicker';
 import { CheeseWedgeSvg } from '@/components/CheeseWedgeSvg';
 import { Colors, Fonts, Radius } from '@/lib/theme';
-import { TEXTURES, MILK_TYPES } from '@/lib/cheeseData';
+import { TEXTURES, MILK_TYPES, CHEESE_FAMILIES, AGING_PERIODS } from '@/lib/cheeseData';
+import { getMergedOptions } from '@/lib/options';
 
 export default function NewCheeseScreen() {
   const { user } = useUser();
@@ -30,9 +32,23 @@ export default function NewCheeseScreen() {
   const [texture, setTexture] = useState('');
   const [milkType, setMilkType] = useState('');
   const [origin, setOrigin] = useState('');
+  const [cheeseFamily, setCheeseFamily] = useState('');
+  const [agingPeriod, setAgingPeriod] = useState('');
+  const [producer, setProducer] = useState('');
   const [locations, setLocations] = useState<string[]>([]);
   const [newLocation, setNewLocation] = useState('');
   const [imageUri, setImageUri] = useState<string | undefined>();
+
+  const { data: cheeseFamilyOptions = CHEESE_FAMILIES.map((f) => ({ value: f.value, label: f.label })) } = useQuery({
+    queryKey: ['options', 'cheeseFamilies'],
+    queryFn: () => getMergedOptions('cheeseFamilies'),
+    staleTime: 5 * 60 * 1000,
+  });
+  const { data: agingOptions = AGING_PERIODS.map((a) => ({ value: a.value, label: a.label })) } = useQuery({
+    queryKey: ['options', 'agingPeriods'],
+    queryFn: () => getMergedOptions('agingPeriods'),
+    staleTime: 5 * 60 * 1000,
+  });
 
   const pickImage = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -74,6 +90,9 @@ export default function NewCheeseScreen() {
     if (!texture && detected.texture) setTexture(detected.texture);
     if (!milkType && detected.milkType) setMilkType(detected.milkType);
     if (!origin && detected.origin) setOrigin(detected.origin);
+    if (!cheeseFamily && detected.cheeseFamily) setCheeseFamily(detected.cheeseFamily);
+    if (!agingPeriod && detected.agingPeriod) setAgingPeriod(detected.agingPeriod);
+    if (!producer && detected.producer) setProducer(detected.producer);
 
     if (detected.confidence === 'laag') {
       Alert.alert(
@@ -113,9 +132,12 @@ export default function NewCheeseScreen() {
     await addCheese.mutateAsync({
       data: {
         name: name.trim(),
-        texture: texture as any,
-        milkType: milkType as any,
+        texture,
+        milkType,
         origin,
+        cheeseFamily,
+        agingPeriod,
+        producer: producer.trim(),
         purchaseLocations: locations,
         createdBy: user!.id,
       },
@@ -220,6 +242,38 @@ export default function NewCheeseScreen() {
             options={MILK_TYPES}
             value={milkType}
             onChange={setMilkType}
+          />
+        </View>
+
+        {/* Cheese family */}
+        <View style={styles.field}>
+          <ChipPicker
+            label="Kaassoort"
+            options={cheeseFamilyOptions}
+            value={cheeseFamily}
+            onChange={setCheeseFamily}
+          />
+        </View>
+
+        {/* Aging period */}
+        <View style={styles.field}>
+          <ChipPicker
+            label="Rijping"
+            options={agingOptions}
+            value={agingPeriod}
+            onChange={setAgingPeriod}
+          />
+        </View>
+
+        {/* Producer */}
+        <View style={styles.field}>
+          <Text style={styles.fieldLabel}>Producent / Merk</Text>
+          <TextInput
+            style={styles.input}
+            value={producer}
+            onChangeText={setProducer}
+            placeholder="Bijv. Beemster, Président"
+            placeholderTextColor={Colors.textMuted}
           />
         </View>
 

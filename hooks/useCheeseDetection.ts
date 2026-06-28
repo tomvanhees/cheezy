@@ -4,6 +4,7 @@ import * as ImagePicker from 'expo-image-picker';
 import * as ImageManipulator from 'expo-image-manipulator';
 import * as FileSystem from 'expo-file-system';
 import { functions } from '@/lib/firebase';
+import { persistDetectedOptions } from '@/lib/options';
 import type { DetectedCheese, DetectCheeseRequest } from '@/lib/types';
 
 export type { DetectedCheese };
@@ -45,8 +46,12 @@ async function captureAndDetect(
   // Call the Cloud Function
   const fn = httpsCallable<DetectCheeseRequest, DetectedCheese>(functions, 'detectCheese');
   const response = await fn({ imageBase64, mimeType: 'image/jpeg' });
+  const detected = response.data;
 
-  return { imageUri: compressed.uri, detected: response.data };
+  // Persist any novel values returned by AI so they become chip options for everyone
+  await persistDetectedOptions(detected);
+
+  return { imageUri: compressed.uri, detected };
 }
 
 export function useCheeseDetection() {

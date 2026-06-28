@@ -150,13 +150,22 @@ export default function CheeseDetailScreen() {
           <Text style={styles.cheeseName}>{cheese.name}</Text>
           <View style={styles.infoRow}>
             {cheese.texture && (
-              <View style={styles.infoChip}><Text style={styles.infoChipText}>{TEXTURE_LABELS[cheese.texture]}</Text></View>
+              <View style={styles.infoChip}><Text style={styles.infoChipText}>{TEXTURE_LABELS[cheese.texture] ?? cheese.texture}</Text></View>
             )}
             {cheese.milkType && (
-              <View style={styles.infoChip}><Text style={styles.infoChipText}>{MILK_LABELS[cheese.milkType]}</Text></View>
+              <View style={styles.infoChip}><Text style={styles.infoChipText}>{MILK_LABELS[cheese.milkType] ?? cheese.milkType}</Text></View>
             )}
+            {cheese.cheeseFamily ? (
+              <View style={styles.infoChip}><Text style={styles.infoChipText}>🧀 {cheese.cheeseFamily}</Text></View>
+            ) : null}
+            {cheese.agingPeriod ? (
+              <View style={styles.infoChip}><Text style={styles.infoChipText}>⌛ {cheese.agingPeriod}</Text></View>
+            ) : null}
             {cheese.origin ? (
               <View style={styles.infoChip}><Text style={styles.infoChipText}>📍 {cheese.origin}</Text></View>
+            ) : null}
+            {cheese.producer ? (
+              <View style={styles.infoChip}><Text style={styles.infoChipText}>🏷️ {cheese.producer}</Text></View>
             ) : null}
           </View>
         </View>

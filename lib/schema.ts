@@ -7,8 +7,10 @@ import { db } from './firebase';
  *
  * History:
  *   1 — initial schema (users, cheeses, ratings sub-collection)
+ *   2 — Cheese extended with optional cheeseFamily, agingPeriod, producer;
+ *       dynamic custom options persisted in _options/{category}
  */
-export const SCHEMA_VERSION = 1;
+export const SCHEMA_VERSION = 2;
 
 export interface SchemaMetaDoc {
   version: number;

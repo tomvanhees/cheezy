@@ -99,6 +99,35 @@ export const ORIGINS: OriginCountry[] = [
   },
 ];
 
+export const CHEESE_FAMILIES = [
+  { value: 'Blauwschimmelkaas', label: 'Blauwschimmelkaas' },
+  { value: 'Gewassenkorstkaas', label: 'Gewassenkorstkaas' },
+  { value: 'Harde kaas', label: 'Harde kaas' },
+  { value: 'Halfharde kaas', label: 'Halfharde kaas' },
+  { value: 'Verse kaas', label: 'Verse kaas' },
+  { value: 'Witschimmelkaas', label: 'Witschimmelkaas' },
+  { value: 'Zachte kaas', label: 'Zachte kaas' },
+  { value: 'Geitenkaas', label: 'Geitenkaas' },
+  { value: 'Schapenkaas', label: 'Schapenkaas' },
+  { value: 'Feta', label: 'Feta' },
+  { value: 'Mozzarella', label: 'Mozzarella' },
+  { value: 'Parmezaantype', label: 'Parmezaantype' },
+  { value: 'Cheddartype', label: 'Cheddartype' },
+  { value: 'Goudatype', label: 'Goudatype' },
+] as const;
+
+// Standard Dutch/Belgian aging scale
+export const AGING_PERIODS = [
+  { value: 'Vers', label: 'Vers (0–2 weken)' },
+  { value: 'Jong', label: 'Jong (4–8 weken)' },
+  { value: 'Jong belegen', label: 'Jong belegen (2–4 mnd)' },
+  { value: 'Belegen', label: 'Belegen (4–7 mnd)' },
+  { value: 'Extra belegen', label: 'Extra belegen (7–10 mnd)' },
+  { value: 'Oud', label: 'Oud (10–12 mnd)' },
+  { value: 'Extra oud', label: 'Extra oud (12–18 mnd)' },
+  { value: 'Overjarig', label: 'Overjarig (18+ mnd)' },
+] as const;
+
 export const USER_COLORS = [
   '#E57373',
   '#64B5F6',

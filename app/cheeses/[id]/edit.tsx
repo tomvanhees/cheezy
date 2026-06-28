@@ -10,13 +10,15 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
+import { useQuery } from '@tanstack/react-query';
 import * as ImagePicker from 'expo-image-picker';
 import { useCheeses, useUpdateCheese } from '@/hooks/useCheeses';
 import { ChipPicker } from '@/components/ChipPicker';
 import { OriginPicker } from '@/components/OriginPicker';
 import { CheeseWedgeSvg } from '@/components/CheeseWedgeSvg';
 import { Colors, Fonts, Radius } from '@/lib/theme';
-import { TEXTURES, MILK_TYPES } from '@/lib/cheeseData';
+import { TEXTURES, MILK_TYPES, CHEESE_FAMILIES, AGING_PERIODS } from '@/lib/cheeseData';
+import { getMergedOptions } from '@/lib/options';
 
 export default function EditCheeseScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -28,9 +30,23 @@ export default function EditCheeseScreen() {
   const [texture, setTexture] = useState(cheese?.texture ?? '');
   const [milkType, setMilkType] = useState(cheese?.milkType ?? '');
   const [origin, setOrigin] = useState(cheese?.origin ?? '');
+  const [cheeseFamily, setCheeseFamily] = useState(cheese?.cheeseFamily ?? '');
+  const [agingPeriod, setAgingPeriod] = useState(cheese?.agingPeriod ?? '');
+  const [producer, setProducer] = useState(cheese?.producer ?? '');
   const [locations, setLocations] = useState<string[]>(cheese?.purchaseLocations ?? []);
   const [newLocation, setNewLocation] = useState('');
   const [imageUri, setImageUri] = useState<string | undefined>();
+
+  const { data: cheeseFamilyOptions = CHEESE_FAMILIES.map((f) => ({ value: f.value, label: f.label })) } = useQuery({
+    queryKey: ['options', 'cheeseFamilies'],
+    queryFn: () => getMergedOptions('cheeseFamilies'),
+    staleTime: 5 * 60 * 1000,
+  });
+  const { data: agingOptions = AGING_PERIODS.map((a) => ({ value: a.value, label: a.label })) } = useQuery({
+    queryKey: ['options', 'agingPeriods'],
+    queryFn: () => getMergedOptions('agingPeriods'),
+    staleTime: 5 * 60 * 1000,
+  });
 
   if (!cheese) return null;
 
@@ -68,9 +84,12 @@ export default function EditCheeseScreen() {
       id,
       data: {
         name: name.trim(),
-        texture: texture as any,
-        milkType: milkType as any,
+        texture,
+        milkType,
         origin,
+        cheeseFamily,
+        agingPeriod,
+        producer: producer.trim(),
         purchaseLocations: locations,
       },
       imageUri,
@@ -123,6 +142,25 @@ export default function EditCheeseScreen() {
 
         <View style={styles.field}>
           <ChipPicker label="Melksoort" options={MILK_TYPES} value={milkType} onChange={setMilkType} />
+        </View>
+
+        <View style={styles.field}>
+          <ChipPicker label="Kaassoort" options={cheeseFamilyOptions} value={cheeseFamily} onChange={setCheeseFamily} />
+        </View>
+
+        <View style={styles.field}>
+          <ChipPicker label="Rijping" options={agingOptions} value={agingPeriod} onChange={setAgingPeriod} />
+        </View>
+
+        <View style={styles.field}>
+          <Text style={styles.fieldLabel}>Producent / Merk</Text>
+          <TextInput
+            style={styles.input}
+            value={producer}
+            onChangeText={setProducer}
+            placeholder="Bijv. Beemster, Président"
+            placeholderTextColor={Colors.textMuted}
+          />
         </View>
 
         <View style={styles.field}>

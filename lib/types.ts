@@ -8,10 +8,26 @@ export interface DetectCheeseRequest {
 
 export interface DetectedCheese {
   name: string | null;
-  texture: 'vers' | 'zacht' | 'halfzacht' | 'halfhard' | 'hard' | null;
-  milkType: 'koe' | 'geit' | 'schaap' | 'buffel' | 'gemengd' | null;
+  texture: string | null;
+  milkType: string | null;
   origin: string | null;
+  cheeseFamily: string | null;
+  agingPeriod: string | null;
+  producer: string | null;
   confidence: 'hoog' | 'laag';
+}
+
+// Firestore document structure for dynamic options
+export type OptionCategory =
+  | 'textures'
+  | 'milkTypes'
+  | 'cheeseFamilies'
+  | 'agingPeriods'
+  | 'extraOrigins';
+
+export interface OptionsDoc {
+  values: string[];
+  updatedAt: number;
 }
 
 export interface AppUser {
@@ -25,9 +41,12 @@ export interface AppUser {
 export interface Cheese {
   id: string;
   name: string;
-  texture: 'vers' | 'zacht' | 'halfzacht' | 'halfhard' | 'hard';
-  milkType: 'koe' | 'geit' | 'schaap' | 'buffel' | 'gemengd';
+  texture: string;       // 'vers' | 'zacht' | 'halfzacht' | 'halfhard' | 'hard' + custom
+  milkType: string;      // 'koe' | 'geit' | 'schaap' | 'buffel' | 'gemengd' + custom
   origin: string;
+  cheeseFamily?: string; // e.g. 'Blauwschimmelkaas', 'Gewassenkorstkaas' (optional for backward compat)
+  agingPeriod?: string;  // e.g. 'Jong', 'Belegen', 'Extra oud' (optional for backward compat)
+  producer?: string;     // brand / producer name (optional for backward compat)
   imageUrl?: string;
   purchaseLocations: string[];
   createdAt: number;
