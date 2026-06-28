@@ -63,10 +63,18 @@ export function useAddCheese() {
     }) => {
       const id = await addCheese({ ...data });
       if (imageUri) {
-        const imageUrl = await compressAndUploadImage(imageUri, id);
-        await updateCheese(id, { imageUrl });
+        try {
+          const imageUrl = await compressAndUploadImage(imageUri, id);
+          await updateCheese(id, { imageUrl });
+          return { id, imageUploadFailed: false };
+        } catch {
+          // Cheese was created successfully; image upload failed.
+          // Return without throwing so the form navigates away and
+          // the user can add a photo later (prevents double-creation).
+          return { id, imageUploadFailed: true };
+        }
       }
-      return id;
+      return { id, imageUploadFailed: false };
     },
   });
 }
