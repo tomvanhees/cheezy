@@ -18,6 +18,7 @@ import { useAddCheese } from '@/hooks/useCheeses';
 import { useCheeseDetection } from '@/hooks/useCheeseDetection';
 import { ChipPicker } from '@/components/ChipPicker';
 import { OriginPicker } from '@/components/OriginPicker';
+import { StorePicker } from '@/components/StorePicker';
 import { CheeseWedgeSvg } from '@/components/CheeseWedgeSvg';
 import { Colors, Fonts, Radius } from '@/lib/theme';
 import { TEXTURES, MILK_TYPES, CHEESE_FAMILIES, AGING_PERIODS } from '@/lib/cheeseData';
@@ -35,8 +36,8 @@ export default function NewCheeseScreen() {
   const [cheeseFamily, setCheeseFamily] = useState('');
   const [agingPeriod, setAgingPeriod] = useState('');
   const [producer, setProducer] = useState('');
+  const [isSliced, setIsSliced] = useState<boolean | undefined>();
   const [locations, setLocations] = useState<string[]>([]);
-  const [newLocation, setNewLocation] = useState('');
   const [imageUri, setImageUri] = useState<string | undefined>();
 
   const { data: cheeseFamilyOptions = CHEESE_FAMILIES.map((f) => ({ value: f.value, label: f.label })) } = useQuery({
@@ -111,18 +112,6 @@ export default function NewCheeseScreen() {
     }
   };
 
-  const addLocation = () => {
-    const trimmed = newLocation.trim();
-    if (trimmed && !locations.includes(trimmed)) {
-      setLocations([...locations, trimmed]);
-      setNewLocation('');
-    }
-  };
-
-  const removeLocation = (loc: string) => {
-    setLocations(locations.filter((l) => l !== loc));
-  };
-
   const handleSave = async () => {
     if (!name.trim()) {
       Alert.alert('Naam vereist', 'Geef de kaas een naam.');
@@ -147,6 +136,7 @@ export default function NewCheeseScreen() {
           cheeseFamily,
           agingPeriod,
           producer: producer.trim(),
+          isSliced,
           purchaseLocations: locations,
           createdBy: user!.id,
         },
@@ -308,31 +298,27 @@ export default function NewCheeseScreen() {
           <OriginPicker value={origin} onChange={setOrigin} />
         </View>
 
+        {/* Sliced */}
+        <View style={styles.field}>
+          <Text style={styles.fieldLabel}>Vorm</Text>
+          <View style={styles.slicedRow}>
+            {([{ v: false, label: 'Heel stuk' }, { v: true, label: 'Gesneden' }] as const).map(({ v, label }) => (
+              <Pressable
+                key={label}
+                style={[styles.slicedChip, isSliced === v && styles.slicedChipActive]}
+                onPress={() => setIsSliced(isSliced === v ? undefined : v)}
+              >
+                <Text style={[styles.slicedChipText, isSliced === v && styles.slicedChipTextActive]}>
+                  {label}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+        </View>
+
         {/* Purchase locations */}
         <View style={styles.field}>
-          <Text style={styles.fieldLabel}>Aankooplocaties</Text>
-          {locations.map((loc) => (
-            <View key={loc} style={styles.locationRow}>
-              <Text style={styles.locationText}>{loc}</Text>
-              <Pressable onPress={() => removeLocation(loc)}>
-                <Text style={styles.removeBtn}>✕</Text>
-              </Pressable>
-            </View>
-          ))}
-          <View style={styles.addLocationRow}>
-            <TextInput
-              style={[styles.input, { flex: 1 }]}
-              value={newLocation}
-              onChangeText={setNewLocation}
-              placeholder="Bijv. Carrefour Gent"
-              placeholderTextColor={Colors.textMuted}
-              onSubmitEditing={addLocation}
-              returnKeyType="done"
-            />
-            <Pressable style={styles.addBtn} onPress={addLocation}>
-              <Text style={styles.addBtnText}>+</Text>
-            </Pressable>
-          </View>
+          <StorePicker value={locations} onChange={setLocations} />
         </View>
 
         {/* Save */}
@@ -436,29 +422,22 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: Colors.border,
   },
-  locationRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: Colors.surface,
-    borderRadius: Radius.md,
-    paddingHorizontal: 14,
+  slicedRow: { flexDirection: 'row', gap: 8 },
+  slicedChip: {
+    flex: 1,
+    borderRadius: Radius.full,
     paddingVertical: 10,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    justifyContent: 'space-between',
-  },
-  locationText: { fontFamily: Fonts.body, fontSize: 15, color: Colors.text },
-  removeBtn: { fontSize: 16, color: Colors.rating.vies, paddingHorizontal: 4 },
-  addLocationRow: { flexDirection: 'row', gap: 8, alignItems: 'center' },
-  addBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: Radius.md,
-    backgroundColor: Colors.primary,
     alignItems: 'center',
-    justifyContent: 'center',
+    borderWidth: 1.5,
+    borderColor: Colors.border,
+    backgroundColor: Colors.surface,
   },
-  addBtnText: { fontSize: 24, color: '#FFFFFF', lineHeight: 28 },
+  slicedChipActive: {
+    borderColor: Colors.primary,
+    backgroundColor: `${Colors.primary}15`,
+  },
+  slicedChipText: { fontFamily: Fonts.bodySemiBold, fontSize: 14, color: Colors.textSecondary },
+  slicedChipTextActive: { color: Colors.primaryDark },
   saveBtn: {
     backgroundColor: Colors.primary,
     borderRadius: Radius.full,

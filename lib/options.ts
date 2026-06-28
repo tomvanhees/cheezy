@@ -19,6 +19,7 @@ const SEEDS: Record<OptionCategory, string[]> = {
     o.country,
     ...o.regions.map((r) => `${o.country} — ${r}`),
   ]),
+  storeLocations: [], // no seeds; all stores are user-created
 };
 
 function optionsRef(category: OptionCategory) {

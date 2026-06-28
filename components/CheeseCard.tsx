@@ -54,6 +54,9 @@ export function CheeseCard({ cheese, ratings, users, onPress }: Props) {
           <Text style={styles.infoChip}>{TEXTURE_LABELS[cheese.texture] ?? cheese.texture}</Text>
           <Text style={styles.infoChip}>{MILK_LABELS[cheese.milkType] ?? cheese.milkType}</Text>
           {cheese.origin ? <Text style={styles.infoChip} numberOfLines={1}>{cheese.origin}</Text> : null}
+          {cheese.isSliced !== undefined && (
+            <Text style={styles.infoChip}>{cheese.isSliced ? '✂️' : '🧀'}</Text>
+          )}
         </View>
 
         {/* User ratings */}

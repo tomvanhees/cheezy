@@ -167,6 +167,11 @@ export default function CheeseDetailScreen() {
             {cheese.producer ? (
               <View style={styles.infoChip}><Text style={styles.infoChipText}>🏷️ {cheese.producer}</Text></View>
             ) : null}
+            {cheese.isSliced !== undefined && (
+              <View style={styles.infoChip}>
+                <Text style={styles.infoChipText}>{cheese.isSliced ? '✂️ Gesneden' : '🧀 Heel stuk'}</Text>
+              </View>
+            )}
           </View>
         </View>
 
