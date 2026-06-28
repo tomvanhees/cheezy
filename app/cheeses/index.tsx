@@ -2,7 +2,7 @@ import React, { useMemo, useState, useCallback } from 'react';
 import {
   View,
   Text,
-  FlatList,
+  SectionList,
   Pressable,
   StyleSheet,
   ScrollView,
@@ -16,8 +16,8 @@ import { subscribeToUsers } from '@/lib/firestore';
 import { CheeseCard } from '@/components/CheeseCard';
 import { Colors, Fonts, Radius, Shadow } from '@/lib/theme';
 import { applySortAndFilter } from '@/lib/ranking';
-import type { SortOption } from '@/lib/ranking';
-import type { AppUser } from '@/lib/types';
+import type { SortOption, CheeseWithRatings } from '@/lib/ranking';
+import type { AppUser, RatingLevel } from '@/lib/types';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
 
@@ -43,6 +43,83 @@ const MILK_FILTERS = [
   { value: 'buffel', label: '🐃 Buffel' },
   { value: 'gemengd', label: '🥛 Gemengd' },
 ];
+
+type CheeseSection = { title: string; data: CheeseWithRatings[] };
+
+const TEXTURE_ORDER = ['vers', 'zacht', 'halfzacht', 'halfhard', 'hard'];
+const TEXTURE_LABELS: Record<string, string> = {
+  vers: 'Vers', zacht: 'Zacht', halfzacht: 'Halfzacht', halfhard: 'Halfhard', hard: 'Hard',
+};
+
+function groupCheeses(cheeses: CheeseWithRatings[], sort: SortOption): CheeseSection[] {
+  if (cheeses.length === 0) return [];
+
+  switch (sort) {
+    case 'textuur': {
+      const map = new Map<string, CheeseWithRatings[]>();
+      for (const c of cheeses) {
+        if (!map.has(c.texture)) map.set(c.texture, []);
+        map.get(c.texture)!.push(c);
+      }
+      const knownKeys = TEXTURE_ORDER.filter((k) => map.has(k));
+      const otherKeys = [...map.keys()].filter((k) => !TEXTURE_ORDER.includes(k)).sort();
+      return [...knownKeys, ...otherKeys].map((k) => ({
+        title: TEXTURE_LABELS[k] ?? k.charAt(0).toUpperCase() + k.slice(1),
+        data: map.get(k)!,
+      }));
+    }
+
+    case 'naam': {
+      const map = new Map<string, CheeseWithRatings[]>();
+      for (const c of cheeses) {
+        const letter = c.name.charAt(0).toUpperCase();
+        if (!map.has(letter)) map.set(letter, []);
+        map.get(letter)!.push(c);
+      }
+      return [...map.keys()].sort().map((letter) => ({ title: letter, data: map.get(letter)! }));
+    }
+
+    case 'nieuwst': {
+      const map = new Map<string, CheeseWithRatings[]>();
+      const order: string[] = [];
+      for (const c of cheeses) {
+        const raw = new Date(c.createdAt).toLocaleDateString('nl-BE', {
+          month: 'long', year: 'numeric',
+        });
+        const key = raw.charAt(0).toUpperCase() + raw.slice(1);
+        if (!map.has(key)) { map.set(key, []); order.push(key); }
+        map.get(key)!.push(c);
+      }
+      return order.map((key) => ({ title: key, data: map.get(key)! }));
+    }
+
+    default: {
+      // consensus — group by dominant (most-voted) rating
+      const RATING_ORDER = ['heerlijk', 'lekker', 'eetbaar', 'vies', '_none'] as const;
+      const RATING_LABELS: Record<string, string> = {
+        heerlijk: 'Heerlijk', lekker: 'Lekker', eetbaar: 'Eetbaar', vies: 'Vies',
+        _none: 'Niet beoordeeld',
+      };
+      const LEVELS: RatingLevel[] = ['heerlijk', 'lekker', 'eetbaar', 'vies'];
+      const map = new Map<string, CheeseWithRatings[]>();
+      for (const c of cheeses) {
+        let key = '_none';
+        if (c.ratings.length > 0) {
+          const counts: Record<string, number> = {};
+          for (const r of c.ratings) counts[r.rating] = (counts[r.rating] ?? 0) + 1;
+          key = LEVELS.reduce((best, lvl) =>
+            (counts[lvl] ?? 0) > (counts[best] ?? 0) ? lvl : best, LEVELS[0]);
+        }
+        if (!map.has(key)) map.set(key, []);
+        map.get(key)!.push(c);
+      }
+      return RATING_ORDER.filter((k) => map.has(k)).map((k) => ({
+        title: RATING_LABELS[k],
+        data: map.get(k)!,
+      }));
+    }
+  }
+}
 
 function useUsers() {
   const queryClient = useQueryClient();
@@ -86,14 +163,13 @@ export default function CheeseListScreen() {
     [cheeses, ratingsMap]
   );
 
-  const sorted = useMemo(
-    () =>
-      applySortAndFilter(cheesesWithRatings, sort, {
-        textures: textureFilter,
-        milkTypes: milkFilter,
-      }),
-    [cheesesWithRatings, sort, textureFilter, milkFilter]
-  );
+  const sections = useMemo(() => {
+    const filtered = applySortAndFilter(cheesesWithRatings, sort, {
+      textures: textureFilter,
+      milkTypes: milkFilter,
+    });
+    return groupCheeses(filtered, sort);
+  }, [cheesesWithRatings, sort, textureFilter, milkFilter]);
 
   const activeFilterCount = textureFilter.length + milkFilter.length;
 
@@ -205,16 +281,17 @@ export default function CheeseListScreen() {
           <View style={styles.center}>
             <ActivityIndicator color={Colors.primary} size="large" />
           </View>
-        ) : sorted.length === 0 ? (
+        ) : sections.length === 0 ? (
           <View style={styles.center}>
             <Text style={styles.emptyEmoji}>🧀</Text>
             <Text style={styles.emptyTitle}>Nog geen kazen</Text>
             <Text style={styles.emptySubtitle}>Voeg je eerste kaas toe!</Text>
           </View>
         ) : (
-          <FlatList
-            data={sorted}
+          <SectionList
+            sections={sections}
             keyExtractor={(item) => item.id}
+            stickySectionHeadersEnabled={false}
             contentContainerStyle={styles.list}
             renderItem={({ item }) => (
               <CheeseCard
@@ -223,6 +300,11 @@ export default function CheeseListScreen() {
                 users={users}
                 onPress={() => router.push(`/cheeses/${item.id}`)}
               />
+            )}
+            renderSectionHeader={({ section }) => (
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionHeaderText}>{section.title}</Text>
+              </View>
             )}
             ItemSeparatorComponent={() => <View style={{ height: 12 }} />}
             refreshControl={
@@ -364,8 +446,17 @@ const styles = StyleSheet.create({
     color: Colors.rating.vies,
   },
   list: {
-    padding: 16,
+    paddingHorizontal: 16,
     paddingBottom: 100,
+  },
+  sectionHeader: {
+    paddingTop: 20,
+    paddingBottom: 10,
+  },
+  sectionHeaderText: {
+    fontFamily: Fonts.heading,
+    fontSize: 18,
+    color: Colors.text,
   },
   center: {
     flex: 1,

@@ -4,8 +4,6 @@ import {
   Text,
   TextInput,
   ScrollView,
-  KeyboardAvoidingView,
-  Platform,
   Pressable,
   StyleSheet,
   Image,
@@ -178,14 +176,11 @@ export default function NewCheeseScreen() {
   return (
     <>
       <Stack.Screen options={{ title: 'Kaas toevoegen' }} />
-      <KeyboardAvoidingView
-        style={styles.flex}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      >
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={styles.content}
         keyboardShouldPersistTaps="handled"
+        automaticallyAdjustKeyboardInsets
       >
         {/* Scan banner */}
         <View style={styles.scanBanner}>
@@ -353,13 +348,11 @@ export default function NewCheeseScreen() {
           }
         </Pressable>
       </ScrollView>
-      </KeyboardAvoidingView>
     </>
   );
 }
 
 const styles = StyleSheet.create({
-  flex: { flex: 1 },
   scroll: { flex: 1 },
   content: { padding: 20, gap: 20, paddingBottom: 40 },
 
