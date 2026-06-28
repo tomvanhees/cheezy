@@ -72,35 +72,43 @@ export default function NewCheeseScreen() {
   };
 
   const handleScan = async (source: 'camera' | 'gallery') => {
-    const result = await detect.mutateAsync(source);
-    if (!result) return;
+    try {
+      const result = await detect.mutateAsync(source);
+      if (!result) return;
 
-    const { imageUri: scannedUri, detected } = result;
-    setImageUri(scannedUri);
+      const { imageUri: scannedUri, detected } = result;
+      setImageUri(scannedUri);
 
-    if (!detected.name) {
+      if (!detected.name) {
+        Alert.alert(
+          'Geen kaas gevonden',
+          'Ik kon geen kaas herkennen in de foto. Je kunt de naam zelf invullen.',
+          [{ text: 'OK' }]
+        );
+        return;
+      }
+
+      // Pre-fill form with detected values; don't overwrite fields the user already filled in
+      if (!name) setName(detected.name);
+      if (!texture && detected.texture) setTexture(detected.texture);
+      if (!milkType && detected.milkType) setMilkType(detected.milkType);
+      if (!origin && detected.origin) setOrigin(detected.origin);
+      if (!cheeseFamily && detected.cheeseFamily) setCheeseFamily(detected.cheeseFamily);
+      if (!agingPeriod && detected.agingPeriod) setAgingPeriod(detected.agingPeriod);
+      if (!producer && detected.producer) setProducer(detected.producer);
+
+      if (detected.confidence === 'laag') {
+        Alert.alert(
+          'Lage zekerheid',
+          `Ik denk dat het "${detected.name}" is, maar ik ben er niet zeker van. Controleer even of het klopt.`,
+          [{ text: 'Begrepen' }]
+        );
+      }
+    } catch {
       Alert.alert(
-        'Geen kaas gevonden',
-        'Ik kon geen kaas herkennen in de foto. Je kunt de naam zelf invullen.',
+        'Herkenning mislukt',
+        'Kon de kaas niet herkennen. Controleer je verbinding en probeer opnieuw.',
         [{ text: 'OK' }]
-      );
-      return;
-    }
-
-    // Pre-fill form with detected values; don't overwrite fields the user already filled in
-    if (!name) setName(detected.name);
-    if (!texture && detected.texture) setTexture(detected.texture);
-    if (!milkType && detected.milkType) setMilkType(detected.milkType);
-    if (!origin && detected.origin) setOrigin(detected.origin);
-    if (!cheeseFamily && detected.cheeseFamily) setCheeseFamily(detected.cheeseFamily);
-    if (!agingPeriod && detected.agingPeriod) setAgingPeriod(detected.agingPeriod);
-    if (!producer && detected.producer) setProducer(detected.producer);
-
-    if (detected.confidence === 'laag') {
-      Alert.alert(
-        'Lage zekerheid',
-        `Ik denk dat het "${detected.name}" is, maar ik ben er niet zeker van. Controleer even of het klopt.`,
-        [{ text: 'Begrepen' }]
       );
     }
   };
@@ -131,22 +139,38 @@ export default function NewCheeseScreen() {
       return;
     }
 
-    await addCheese.mutateAsync({
-      data: {
-        name: name.trim(),
-        texture,
-        milkType,
-        origin,
-        cheeseFamily,
-        agingPeriod,
-        producer: producer.trim(),
-        purchaseLocations: locations,
-        createdBy: user!.id,
-      },
-      imageUri,
-    });
+    try {
+      const result = await addCheese.mutateAsync({
+        data: {
+          name: name.trim(),
+          texture,
+          milkType,
+          origin,
+          cheeseFamily,
+          agingPeriod,
+          producer: producer.trim(),
+          purchaseLocations: locations,
+          createdBy: user!.id,
+        },
+        imageUri,
+      });
 
-    router.back();
+      if (result.imageUploadFailed) {
+        Alert.alert(
+          'Foto niet opgeslagen',
+          'De kaas is opgeslagen, maar de foto kon niet worden geüpload. Je kunt de foto later bewerken.',
+          [{ text: 'OK', onPress: () => router.back() }]
+        );
+      } else {
+        router.back();
+      }
+    } catch {
+      Alert.alert(
+        'Opslaan mislukt',
+        'Kon de kaas niet opslaan. Controleer je verbinding en probeer opnieuw.',
+        [{ text: 'OK' }]
+      );
+    }
   };
 
   const isDetecting = detect.isPending;
