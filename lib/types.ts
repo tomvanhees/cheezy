@@ -48,7 +48,6 @@ export interface Cheese {
   cheeseFamily?: string; // e.g. 'Blauwschimmelkaas', 'Gewassenkorstkaas' (optional for backward compat)
   agingPeriod?: string;  // e.g. 'Jong', 'Belegen', 'Extra oud' (optional for backward compat)
   producer?: string;     // brand / producer name (optional for backward compat)
-  isSliced?: boolean;    // true = gesneden, false = heel stuk, undefined = unknown
   imageUrl?: string;
   purchaseLocations: string[];
   createdAt: number;

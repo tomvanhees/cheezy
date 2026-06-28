@@ -34,7 +34,6 @@ export default function EditCheeseScreen() {
   const [cheeseFamily, setCheeseFamily] = useState(cheese?.cheeseFamily ?? '');
   const [agingPeriod, setAgingPeriod] = useState(cheese?.agingPeriod ?? '');
   const [producer, setProducer] = useState(cheese?.producer ?? '');
-  const [isSliced, setIsSliced] = useState<boolean | undefined>(cheese?.isSliced);
   const [locations, setLocations] = useState<string[]>(cheese?.purchaseLocations ?? []);
   const [imageUri, setImageUri] = useState<string | undefined>();
 
@@ -81,7 +80,6 @@ export default function EditCheeseScreen() {
         cheeseFamily,
         agingPeriod,
         producer: producer.trim(),
-        isSliced,
         purchaseLocations: locations,
       },
       imageUri,
@@ -160,24 +158,6 @@ export default function EditCheeseScreen() {
           <OriginPicker value={origin} onChange={setOrigin} />
         </View>
 
-        {/* Sliced */}
-        <View style={styles.field}>
-          <Text style={styles.fieldLabel}>Vorm</Text>
-          <View style={styles.slicedRow}>
-            {([{ v: false, label: 'Heel stuk' }, { v: true, label: 'Gesneden' }] as const).map(({ v, label }) => (
-              <Pressable
-                key={label}
-                style={[styles.slicedChip, isSliced === v && styles.slicedChipActive]}
-                onPress={() => setIsSliced(isSliced === v ? undefined : v)}
-              >
-                <Text style={[styles.slicedChipText, isSliced === v && styles.slicedChipTextActive]}>
-                  {label}
-                </Text>
-              </Pressable>
-            ))}
-          </View>
-        </View>
-
         <View style={styles.field}>
           <StorePicker value={locations} onChange={setLocations} />
         </View>
@@ -235,22 +215,6 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: Colors.border,
   },
-  slicedRow: { flexDirection: 'row', gap: 8 },
-  slicedChip: {
-    flex: 1,
-    borderRadius: Radius.full,
-    paddingVertical: 10,
-    alignItems: 'center',
-    borderWidth: 1.5,
-    borderColor: Colors.border,
-    backgroundColor: Colors.surface,
-  },
-  slicedChipActive: {
-    borderColor: Colors.primary,
-    backgroundColor: `${Colors.primary}15`,
-  },
-  slicedChipText: { fontFamily: Fonts.bodySemiBold, fontSize: 14, color: Colors.textSecondary },
-  slicedChipTextActive: { color: Colors.primaryDark },
   saveBtn: {
     backgroundColor: Colors.primary,
     borderRadius: Radius.full,
