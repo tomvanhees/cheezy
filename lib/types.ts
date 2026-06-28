@@ -1,5 +1,19 @@
 export type RatingLevel = 'vies' | 'eetbaar' | 'lekker' | 'heerlijk';
 
+// Cheese detection (Gemini) — types shared between app and Cloud Function
+export interface DetectCheeseRequest {
+  imageBase64: string;
+  mimeType: 'image/jpeg' | 'image/png' | 'image/webp';
+}
+
+export interface DetectedCheese {
+  name: string | null;
+  texture: 'vers' | 'zacht' | 'halfzacht' | 'halfhard' | 'hard' | null;
+  milkType: 'koe' | 'geit' | 'schaap' | 'buffel' | 'gemengd' | null;
+  origin: string | null;
+  confidence: 'hoog' | 'laag';
+}
+
 export interface AppUser {
   id: string;
   name: string;

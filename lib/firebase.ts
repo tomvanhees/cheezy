@@ -1,6 +1,7 @@
 import { initializeApp, getApps } from 'firebase/app';
 import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
+import { getFunctions } from 'firebase/functions';
 
 /**
  * Replace these values with your own Firebase project config.
@@ -28,5 +29,8 @@ export const db = initializeFirestore(app, {
 });
 
 export const storage = getStorage(app);
+
+// Functions deployed to europe-west1 to keep latency low for Belgian users
+export const functions = getFunctions(app, 'europe-west1');
 
 export default app;

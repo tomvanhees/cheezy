@@ -1,0 +1,25 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Schema metadata — readable by app, not writable from client
+    match /_meta/{doc} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // Users — anyone can read/write (no auth; personal family app)
+    match /users/{userId} {
+      allow read, write: if true;
+    }
+
+    // Cheeses — anyone can read/write
+    match /cheeses/{cheeseId} {
+      allow read, write: if true;
+
+      // Ratings sub-collection
+      match /ratings/{userId} {
+        allow read, write: if true;
+      }
+    }
+  }
+}

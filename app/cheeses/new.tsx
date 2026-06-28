@@ -14,6 +14,7 @@ import { router, Stack } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { useUser } from '@/context/UserContext';
 import { useAddCheese } from '@/hooks/useCheeses';
+import { useCheeseDetection } from '@/hooks/useCheeseDetection';
 import { ChipPicker } from '@/components/ChipPicker';
 import { OriginPicker } from '@/components/OriginPicker';
 import { CheeseWedgeSvg } from '@/components/CheeseWedgeSvg';
@@ -23,6 +24,7 @@ import { TEXTURES, MILK_TYPES } from '@/lib/cheeseData';
 export default function NewCheeseScreen() {
   const { user } = useUser();
   const addCheese = useAddCheese();
+  const detect = useCheeseDetection();
 
   const [name, setName] = useState('');
   const [texture, setTexture] = useState('');
@@ -49,6 +51,37 @@ export default function NewCheeseScreen() {
       quality: 1,
     });
     if (!result.canceled) setImageUri(result.assets[0].uri);
+  };
+
+  const handleScan = async (source: 'camera' | 'gallery') => {
+    const result = await detect.mutateAsync(source);
+    if (!result) return;
+
+    const { imageUri: scannedUri, detected } = result;
+    setImageUri(scannedUri);
+
+    if (!detected.name) {
+      Alert.alert(
+        'Geen kaas gevonden',
+        'Ik kon geen kaas herkennen in de foto. Je kunt de naam zelf invullen.',
+        [{ text: 'OK' }]
+      );
+      return;
+    }
+
+    // Pre-fill form with detected values; don't overwrite fields the user already filled in
+    if (!name) setName(detected.name);
+    if (!texture && detected.texture) setTexture(detected.texture);
+    if (!milkType && detected.milkType) setMilkType(detected.milkType);
+    if (!origin && detected.origin) setOrigin(detected.origin);
+
+    if (detected.confidence === 'laag') {
+      Alert.alert(
+        'Lage zekerheid',
+        `Ik denk dat het "${detected.name}" is, maar ik ben er niet zeker van. Controleer even of het klopt.`,
+        [{ text: 'Begrepen' }]
+      );
+    }
   };
 
   const addLocation = () => {
@@ -92,6 +125,8 @@ export default function NewCheeseScreen() {
     router.back();
   };
 
+  const isDetecting = detect.isPending;
+
   return (
     <>
       <Stack.Screen options={{ title: 'Kaas toevoegen' }} />
@@ -100,7 +135,40 @@ export default function NewCheeseScreen() {
         contentContainerStyle={styles.content}
         keyboardShouldPersistTaps="handled"
       >
-        {/* Image picker */}
+        {/* Scan banner */}
+        <View style={styles.scanBanner}>
+          <Text style={styles.scanTitle}>🔍 Kaas herkennen</Text>
+          <Text style={styles.scanSubtitle}>
+            Maak een foto van de kaas of het etiket — wij vullen de naam in.
+          </Text>
+          <View style={styles.scanButtons}>
+            <Pressable
+              style={[styles.scanBtn, isDetecting && styles.scanBtnDisabled]}
+              onPress={() => handleScan('camera')}
+              disabled={isDetecting}
+              android_ripple={{ color: '#FFFFFF44' }}
+            >
+              {isDetecting ? (
+                <ActivityIndicator color="#fff" size="small" />
+              ) : (
+                <Text style={styles.scanBtnText}>📷 Camera scannen</Text>
+              )}
+            </Pressable>
+            <Pressable
+              style={[styles.scanBtnSecondary, isDetecting && styles.scanBtnDisabled]}
+              onPress={() => handleScan('gallery')}
+              disabled={isDetecting}
+              android_ripple={{ color: `${Colors.primary}33` }}
+            >
+              <Text style={styles.scanBtnSecondaryText}>📁 Uit gallerij</Text>
+            </Pressable>
+          </View>
+          {isDetecting && (
+            <Text style={styles.detectingText}>Kaas herkennen…</Text>
+          )}
+        </View>
+
+        {/* Image preview (set by scan or manual pick) */}
         <View style={styles.imageSection}>
           {imageUri ? (
             <Image source={{ uri: imageUri }} style={styles.image} resizeMode="cover" />
@@ -118,6 +186,9 @@ export default function NewCheeseScreen() {
               <Text style={styles.imageBtnText}>📷 Camera</Text>
             </Pressable>
           </View>
+          <Text style={styles.imageHint}>
+            Foto toevoegen zonder herkenning? Gebruik de knoppen hierboven.
+          </Text>
         </View>
 
         {/* Name */}
@@ -205,7 +276,49 @@ export default function NewCheeseScreen() {
 const styles = StyleSheet.create({
   scroll: { flex: 1 },
   content: { padding: 20, gap: 20, paddingBottom: 40 },
-  imageSection: { alignItems: 'center', gap: 12 },
+
+  // Scan banner
+  scanBanner: {
+    backgroundColor: Colors.surface,
+    borderRadius: Radius.lg,
+    padding: 16,
+    gap: 10,
+    borderWidth: 1.5,
+    borderColor: Colors.border,
+  },
+  scanTitle: { fontFamily: Fonts.bodyBold, fontSize: 15, color: Colors.text },
+  scanSubtitle: { fontFamily: Fonts.body, fontSize: 13, color: Colors.textSecondary },
+  scanButtons: { flexDirection: 'row', gap: 8 },
+  scanBtn: {
+    flex: 1,
+    backgroundColor: Colors.primary,
+    borderRadius: Radius.full,
+    paddingVertical: 11,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 42,
+  },
+  scanBtnDisabled: { opacity: 0.6 },
+  scanBtnText: { fontFamily: Fonts.bodyBold, fontSize: 14, color: '#FFFFFF' },
+  scanBtnSecondary: {
+    flex: 1,
+    borderRadius: Radius.full,
+    paddingVertical: 11,
+    alignItems: 'center',
+    borderWidth: 1.5,
+    borderColor: Colors.primary,
+  },
+  scanBtnSecondaryText: { fontFamily: Fonts.bodyBold, fontSize: 14, color: Colors.primaryDark },
+  detectingText: {
+    fontFamily: Fonts.body,
+    fontSize: 13,
+    color: Colors.textSecondary,
+    textAlign: 'center',
+    fontStyle: 'italic',
+  },
+
+  // Image
+  imageSection: { alignItems: 'center', gap: 8 },
   image: { width: '100%', height: 200, borderRadius: Radius.lg },
   imagePlaceholder: {
     width: '100%',
@@ -216,12 +329,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 8,
   },
-  imagePlaceholderText: {
-    fontFamily: Fonts.body,
-    fontSize: 14,
-    color: Colors.textMuted,
-  },
-  imageButtons: { flexDirection: 'row', gap: 10 },
+  imagePlaceholderText: { fontFamily: Fonts.body, fontSize: 14, color: Colors.textMuted },
+  imageButtons: { flexDirection: 'row', gap: 10, width: '100%' },
   imageBtn: {
     flex: 1,
     borderRadius: Radius.md,
@@ -232,6 +341,9 @@ const styles = StyleSheet.create({
     borderColor: Colors.border,
   },
   imageBtnText: { fontFamily: Fonts.bodySemiBold, fontSize: 14, color: Colors.text },
+  imageHint: { fontFamily: Fonts.body, fontSize: 11, color: Colors.textMuted, textAlign: 'center' },
+
+  // Form
   field: { gap: 8 },
   fieldLabel: { fontFamily: Fonts.bodySemiBold, fontSize: 13, color: Colors.textSecondary },
   input: {
