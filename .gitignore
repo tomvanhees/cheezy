@@ -35,8 +35,9 @@ yarn-error.*
 .env.local
 .env
 
-# Firebase service account (private keys only — google-services.json and
-# GoogleService-Info.plist are Android/iOS config files, not secrets)
+# Firebase config files (contain API keys — supply via EAS file secrets)
+google-services.json
+GoogleService-Info.plist
 *-service-account*.json
 
 # typescript
