@@ -50,7 +50,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         return;
       }
 
-      await ensureSchema();
+      try { await ensureSchema(); } catch { /* _meta writes blocked client-side; server handles schema */ }
 
       const snap = await getDoc(doc(db, 'users', firebaseUser.uid));
 
