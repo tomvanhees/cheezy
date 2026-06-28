@@ -35,9 +35,9 @@ yarn-error.*
 .env.local
 .env
 
-# Firebase service account
-google-services.json
-GoogleService-Info.plist
+# Firebase service account (private keys only — google-services.json and
+# GoogleService-Info.plist are Android/iOS config files, not secrets)
+*-service-account*.json
 
 # typescript
 *.tsbuildinfo
@@ -45,3 +45,4 @@ GoogleService-Info.plist
 # generated native folders
 /ios
 /android
+.idea/
