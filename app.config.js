@@ -30,6 +30,7 @@ export default {
     plugins: [
       'expo-router',
       'expo-font',
+      '@react-native-google-signin/google-signin',
       [
         'expo-notifications',
         {
