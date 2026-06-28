@@ -53,7 +53,6 @@ export function useAllRatings(cheeseIds: string[]) {
 // ── Mutations ─────────────────────────────────────────────────────────────────
 
 export function useAddCheese() {
-  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({
       data,
@@ -62,23 +61,17 @@ export function useAddCheese() {
       data: Omit<Cheese, 'id' | 'createdAt' | '_schemaVersion'>;
       imageUri?: string;
     }) => {
-      // Create the Firestore doc first to get the ID
-      const id = await addCheese({ ...data, imageUrl: undefined });
-      let imageUrl: string | undefined;
+      const id = await addCheese({ ...data });
       if (imageUri) {
-        imageUrl = await compressAndUploadImage(imageUri, id);
+        const imageUrl = await compressAndUploadImage(imageUri, id);
         await updateCheese(id, { imageUrl });
       }
       return id;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['cheeses'] });
     },
   });
 }
 
 export function useUpdateCheese() {
-  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({
       id,
@@ -96,22 +89,14 @@ export function useUpdateCheese() {
         await updateCheese(id, data);
       }
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['cheeses'] });
-    },
   });
 }
 
 export function useDeleteCheese() {
-  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
       await deleteCheeseImage(id);
       await deleteCheese(id);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['cheeses'] });
-      queryClient.invalidateQueries({ queryKey: ['ratings'] });
     },
   });
 }
