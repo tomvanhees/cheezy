@@ -2,24 +2,18 @@ import React, { useState } from 'react';
 import {
   View,
   Text,
-  TextInput,
   Pressable,
   StyleSheet,
-  KeyboardAvoidingView,
-  Platform,
   ActivityIndicator,
 } from 'react-native';
 import { router, Stack } from 'expo-router';
-import { useUser, generateUserId, pickUserColor } from '@/context/UserContext';
+import { useUser } from '@/context/UserContext';
 import { CheeseWedgeSvg } from '@/components/CheeseWedgeSvg';
 import { Colors, Fonts, Radius } from '@/lib/theme';
-import { subscribeToUsers } from '@/lib/firestore';
-import { ensureSchema } from '@/lib/schema';
 
-export default function OnboardingScreen() {
-  const { user, isLoading, setUser } = useUser();
-  const [name, setName] = useState('');
-  const [saving, setSaving] = useState(false);
+export default function SignInScreen() {
+  const { user, isLoading, signIn } = useUser();
+  const [signing, setSigning] = useState(false);
   const [error, setError] = useState('');
 
   React.useEffect(() => {
@@ -36,46 +30,19 @@ export default function OnboardingScreen() {
     );
   }
 
-  const handleConfirm = async () => {
-    const trimmed = name.trim();
-    if (!trimmed) {
-      setError('Vul je naam in.');
-      return;
-    }
-    setSaving(true);
+  const handleSignIn = async () => {
+    setSigning(true);
+    setError('');
     try {
-      await ensureSchema();
-
-      const existingUsers = await new Promise<{ color: string }[]>((resolve) => {
-        const unsub = subscribeToUsers((users) => {
-          unsub();
-          resolve(users);
-        });
-      });
-
-      const color = pickUserColor(existingUsers.map((u) => u.color));
-      const id = generateUserId();
-
-      await setUser({
-        id,
-        name: trimmed,
-        color,
-        createdAt: Date.now(),
-      });
-
-      router.replace('/cheeses');
-    } catch (e) {
-      setError('Er ging iets mis. Probeer opnieuw.');
-    } finally {
-      setSaving(false);
+      await signIn();
+    } catch {
+      setError('Aanmelden mislukt. Probeer opnieuw.');
+      setSigning(false);
     }
   };
 
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-    >
+    <View style={styles.container}>
       <Stack.Screen options={{ headerShown: false }} />
       <View style={styles.hero}>
         <CheeseWedgeSvg size={150} />
@@ -84,32 +51,20 @@ export default function OnboardingScreen() {
       </View>
 
       <View style={styles.form}>
-        <Text style={styles.question}>Hoe heet jij?</Text>
-        <TextInput
-          style={styles.input}
-          value={name}
-          onChangeText={(t) => { setName(t); setError(''); }}
-          placeholder="Bijv. Tom of Lisa"
-          placeholderTextColor={Colors.textMuted}
-          autoFocus
-          returnKeyType="done"
-          onSubmitEditing={handleConfirm}
-        />
-        {error ? <Text style={styles.error}>{error}</Text> : null}
-
         <Pressable
-          style={[styles.btn, saving && styles.btnDisabled]}
-          onPress={handleConfirm}
-          disabled={saving}
+          style={[styles.btn, signing && styles.btnDisabled]}
+          onPress={handleSignIn}
+          disabled={signing}
           android_ripple={{ color: '#FFFFFF44' }}
         >
-          {saving
+          {signing
             ? <ActivityIndicator color="#fff" />
-            : <Text style={styles.btnText}>Laten we beginnen! 🧀</Text>
+            : <Text style={styles.btnText}>Aanmelden met Google</Text>
           }
         </Pressable>
+        {error ? <Text style={styles.error}>{error}</Text> : null}
       </View>
-    </KeyboardAvoidingView>
+    </View>
   );
 }
 
@@ -145,33 +100,11 @@ const styles = StyleSheet.create({
   form: {
     gap: 14,
   },
-  question: {
-    fontFamily: Fonts.heading,
-    fontSize: 26,
-    color: Colors.text,
-  },
-  input: {
-    backgroundColor: Colors.surface,
-    borderRadius: Radius.md,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    fontFamily: Fonts.body,
-    fontSize: 18,
-    color: Colors.text,
-    borderWidth: 1.5,
-    borderColor: Colors.border,
-  },
-  error: {
-    fontFamily: Fonts.body,
-    fontSize: 13,
-    color: Colors.rating.vies,
-  },
   btn: {
     backgroundColor: Colors.primary,
     borderRadius: Radius.full,
     paddingVertical: 16,
     alignItems: 'center',
-    marginTop: 4,
   },
   btnDisabled: {
     opacity: 0.7,
@@ -180,5 +113,11 @@ const styles = StyleSheet.create({
     fontFamily: Fonts.bodyBold,
     fontSize: 17,
     color: '#FFFFFF',
+  },
+  error: {
+    fontFamily: Fonts.body,
+    fontSize: 13,
+    color: Colors.rating.vies,
+    textAlign: 'center',
   },
 });

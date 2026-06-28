@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { Stack } from 'expo-router';
+import { Stack, router, useSegments } from 'expo-router';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import {
   useFonts,
@@ -13,7 +13,7 @@ import {
 } from '@expo-google-fonts/nunito';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
-import { UserProvider } from '@/context/UserContext';
+import { UserProvider, useUser } from '@/context/UserContext';
 import { Colors } from '@/lib/theme';
 
 SplashScreen.preventAutoHideAsync();
@@ -24,6 +24,19 @@ const queryClient = new QueryClient({
     mutations: { retry: 1 },
   },
 });
+
+function AuthGuard() {
+  const { user, isLoading } = useUser();
+  const segments = useSegments();
+
+  useEffect(() => {
+    if (isLoading) return;
+    const inProtected = segments[0] === 'cheeses';
+    if (inProtected && !user) router.replace('/');
+  }, [user, isLoading, segments]);
+
+  return null;
+}
 
 export default function RootLayout() {
   const [fontsLoaded] = useFonts({
@@ -43,6 +56,7 @@ export default function RootLayout() {
   return (
     <QueryClientProvider client={queryClient}>
       <UserProvider>
+        <AuthGuard />
         <StatusBar style="dark" />
         <Stack
           screenOptions={{
