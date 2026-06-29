@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useCallback } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -7,7 +7,6 @@ import {
   StyleSheet,
   ScrollView,
   ActivityIndicator,
-  RefreshControl,
 } from 'react-native';
 import { router, Stack } from 'expo-router';
 import { useUser } from '@/context/UserContext';
@@ -18,7 +17,7 @@ import { Colors, Fonts, Radius, Shadow } from '@/lib/theme';
 import { applySortAndFilter } from '@/lib/ranking';
 import type { SortOption, CheeseWithRatings } from '@/lib/ranking';
 import type { AppUser, RatingLevel } from '@/lib/types';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { useEffect } from 'react';
 
 const SORT_OPTIONS: { value: SortOption; label: string }[] = [
@@ -134,7 +133,6 @@ function useUsers() {
 
 export default function CheeseListScreen() {
   const { user } = useUser();
-  const queryClient = useQueryClient();
   const { data: cheeses = [], isLoading } = useCheeses();
   const { data: users = [] } = useUsers();
 
@@ -142,15 +140,6 @@ export default function CheeseListScreen() {
   const { data: ratingsMap = {} } = useAllRatings(cheeseIds);
 
   const [sort, setSort] = useState<SortOption>('consensus');
-  const [refreshing, setRefreshing] = useState(false);
-
-  const onRefresh = useCallback(() => {
-    setRefreshing(true);
-    queryClient.invalidateQueries({ queryKey: ['cheeses'] });
-    queryClient.invalidateQueries({ queryKey: ['ratings'] });
-    setTimeout(() => setRefreshing(false), 1000);
-  }, [queryClient]);
-
   const [textureFilter, setTextureFilter] = useState<string[]>([]);
   const [milkFilter, setMilkFilter] = useState<string[]>([]);
   const [openPanel, setOpenPanel] = useState<'sort' | 'filter' | null>(null);
@@ -307,14 +296,6 @@ export default function CheeseListScreen() {
               </View>
             )}
             ItemSeparatorComponent={() => <View style={{ height: 12 }} />}
-            refreshControl={
-              <RefreshControl
-                refreshing={refreshing}
-                onRefresh={onRefresh}
-                colors={[Colors.primary]}
-                tintColor={Colors.primary}
-              />
-            }
           />
         )}
 
