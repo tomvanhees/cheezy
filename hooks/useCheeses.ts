@@ -7,9 +7,36 @@ import {
   updateCheese,
   deleteCheese,
   setRating,
+  subscribeToStores,
+  addStore,
 } from '@/lib/firestore';
 import { compressAndUploadImage, deleteCheeseImage } from '@/lib/storage';
-import type { Cheese, Rating, RatingLevel } from '@/lib/types';
+import type { Cheese, Rating, RatingLevel, Store } from '@/lib/types';
+
+// ── Stores ───────────────────────────────────────────────────────────────────
+
+export function useStores() {
+  const queryClient = useQueryClient();
+
+  useEffect(() => {
+    const unsub = subscribeToStores((stores) => {
+      queryClient.setQueryData<Store[]>(['stores'], stores);
+    });
+    return unsub;
+  }, [queryClient]);
+
+  return useQuery<Store[]>({
+    queryKey: ['stores'],
+    queryFn: () => [],
+    staleTime: Infinity,
+  });
+}
+
+export function useAddStore() {
+  return useMutation({
+    mutationFn: (name: string) => addStore(name),
+  });
+}
 
 // ── Cheeses list ─────────────────────────────────────────────────────────────
 

@@ -14,16 +14,36 @@ import {
 } from 'firebase/firestore';
 import { db } from './firebase';
 import { SCHEMA_VERSION } from './schema';
-import type { AppUser, Cheese, Rating, RatingLevel } from './types';
+import type { AppUser, Cheese, Rating, RatingLevel, Store } from './types';
+
+// ── Stores ───────────────────────────────────────────────────────────────────
+
+export function subscribeToStores(callback: (stores: Store[]) => void): () => void {
+  return onSnapshot(
+    query(collection(db, 'stores'), orderBy('name')),
+    (snap) => {
+      callback(snap.docs.map((d) => ({ id: d.id, ...d.data() } as Store)));
+    },
+    () => {}
+  );
+}
+
+export async function addStore(name: string): Promise<string> {
+  const ref = await addDoc(collection(db, 'stores'), {
+    name: name.trim(),
+    createdAt: Date.now(),
+  });
+  return ref.id;
+}
 
 // ── Users ────────────────────────────────────────────────────────────────────
 
 export function subscribeToUsers(callback: (users: AppUser[]) => void): () => void {
-  return onSnapshot(collection(db, 'users'), (snap) => {
-    callback(
-      snap.docs.map((d) => ({ id: d.id, ...d.data() } as AppUser))
-    );
-  });
+  return onSnapshot(
+    collection(db, 'users'),
+    (snap) => { callback(snap.docs.map((d) => ({ id: d.id, ...d.data() } as AppUser))); },
+    () => {}
+  );
 }
 
 export async function upsertUser(user: Omit<AppUser, 'createdAt'> & { id: string }): Promise<void> {
@@ -41,11 +61,11 @@ export async function updateUserPushToken(userId: string, token: string): Promis
 // ── Cheeses ──────────────────────────────────────────────────────────────────
 
 export function subscribeToCheeses(callback: (cheeses: Cheese[]) => void): () => void {
-  return onSnapshot(collection(db, 'cheeses'), (snap) => {
-    callback(
-      snap.docs.map((d) => ({ id: d.id, ...d.data() } as Cheese))
-    );
-  });
+  return onSnapshot(
+    collection(db, 'cheeses'),
+    (snap) => { callback(snap.docs.map((d) => ({ id: d.id, ...d.data() } as Cheese))); },
+    () => {}
+  );
 }
 
 export async function addCheese(
@@ -79,11 +99,11 @@ export function subscribeToRatings(
   cheeseId: string,
   callback: (ratings: Rating[]) => void
 ): () => void {
-  return onSnapshot(collection(db, 'cheeses', cheeseId, 'ratings'), (snap) => {
-    callback(
-      snap.docs.map((d) => ({ cheeseId, ...d.data() } as Rating))
-    );
-  });
+  return onSnapshot(
+    collection(db, 'cheeses', cheeseId, 'ratings'),
+    (snap) => { callback(snap.docs.map((d) => ({ cheeseId, ...d.data() } as Rating))); },
+    () => {}
+  );
 }
 
 export function subscribeToAllRatings(

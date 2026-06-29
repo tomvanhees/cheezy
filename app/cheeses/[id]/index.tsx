@@ -30,9 +30,10 @@ const MILK_LABELS: Record<string, string> = {
   koe: '🐄 Koe', geit: '🐐 Geit', schaap: '🐑 Schaap', buffel: '🐃 Buffel', gemengd: '🥛 Gemengd',
 };
 
-function useCheeseRatings(cheeseId: string) {
+function useCheeseRatings(cheeseId: string | undefined) {
   const queryClient = useQueryClient();
   useEffect(() => {
+    if (!cheeseId) return;
     const unsub = subscribeToRatings(cheeseId, (ratings) => {
       queryClient.setQueryData<Rating[]>(['ratings', cheeseId], ratings);
     });

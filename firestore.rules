@@ -12,6 +12,11 @@ service cloud.firestore {
       allow read, write: if true;
     }
 
+    // Stores — anyone can read/write
+    match /stores/{storeId} {
+      allow read, write: if true;
+    }
+
     // Cheeses — anyone can read/write
     match /cheeses/{cheeseId} {
       allow read, write: if true;

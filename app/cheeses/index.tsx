@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -17,8 +17,7 @@ import { Colors, Fonts, Radius, Shadow } from '@/lib/theme';
 import { applySortAndFilter } from '@/lib/ranking';
 import type { SortOption, CheeseWithRatings } from '@/lib/ranking';
 import type { AppUser, RatingLevel } from '@/lib/types';
-import { useQuery } from '@tanstack/react-query';
-import { useEffect } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 const SORT_OPTIONS: { value: SortOption; label: string }[] = [
   { value: 'consensus', label: 'Beoordeling' },

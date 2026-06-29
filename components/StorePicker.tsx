@@ -1,7 +1,15 @@
 import React, { useMemo, useState } from 'react';
-import { View, Text, TextInput, Pressable, StyleSheet } from 'react-native';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { getMergedOptions, saveIfNew } from '@/lib/options';
+import {
+  View,
+  Text,
+  TextInput,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Modal,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useStores, useAddStore } from '@/hooks/useCheeses';
 import { Colors, Fonts, Radius } from '@/lib/theme';
 
 interface Props {
@@ -10,122 +18,179 @@ interface Props {
 }
 
 export function StorePicker({ value, onChange }: Props) {
-  const [newStore, setNewStore] = useState('');
-  const queryClient = useQueryClient();
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState('');
 
-  const { data: savedOptions = [] } = useQuery({
-    queryKey: ['options', 'storeLocations'],
-    queryFn: () => getMergedOptions('storeLocations'),
-    staleTime: 5 * 60 * 1000,
-  });
+  const { data: stores = [] } = useStores();
+  const addStore = useAddStore();
 
-  // Also surface any previously-saved names that aren't in the shared list yet
-  const options = useMemo(() => {
-    const knownValues = new Set(savedOptions.map((o) => o.value));
-    const extra = value
-      .filter((v) => !knownValues.has(v))
-      .map((v) => ({ value: v, label: v }));
-    return [...savedOptions, ...extra];
-  }, [savedOptions, value]);
+  const filtered = useMemo(
+    () =>
+      stores.filter((s) =>
+        s.name.toLowerCase().includes(search.toLowerCase())
+      ),
+    [stores, search]
+  );
 
-  const toggle = (store: string) => {
-    onChange(
-      value.includes(store)
-        ? value.filter((s) => s !== store)
-        : [...value, store]
-    );
+  const trimmed = search.trim();
+  const exactMatch = filtered.some(
+    (s) => s.name.toLowerCase() === trimmed.toLowerCase()
+  );
+
+  const toggle = (name: string) => {
+    onChange(value.includes(name) ? value.filter((s) => s !== name) : [...value, name]);
   };
 
-  const addStore = async () => {
-    const trimmed = newStore.trim();
-    if (!trimmed) return;
-    setNewStore('');
-    await saveIfNew('storeLocations', trimmed);
-    queryClient.invalidateQueries({ queryKey: ['options', 'storeLocations'] });
-    if (!value.includes(trimmed)) {
-      onChange([...value, trimmed]);
+  const addAndSelect = (name: string) => {
+    if (!name.trim()) return;
+    addStore.mutate(name.trim());
+    if (!value.includes(name.trim())) {
+      onChange([...value, name.trim()]);
     }
+    setSearch('');
   };
+
+  const close = () => {
+    setOpen(false);
+    setSearch('');
+  };
+
+  const triggerLabel =
+    value.length === 0 ? 'Selecteer winkel(s)…' : value.join(', ');
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.label}>Winkels</Text>
+    <>
+      <Pressable
+        style={styles.trigger}
+        onPress={() => setOpen(true)}
+        android_ripple={{ color: `${Colors.primary}22` }}
+      >
+        <Text
+          style={[styles.triggerText, value.length === 0 && styles.placeholder]}
+          numberOfLines={1}
+        >
+          {triggerLabel}
+        </Text>
+        <Text style={styles.arrow}>▾</Text>
+      </Pressable>
 
-      {options.length > 0 && (
-        <View style={styles.chips}>
-          {options.map((opt) => {
-            const selected = value.includes(opt.value);
-            return (
+      <Modal visible={open} animationType="slide" presentationStyle="pageSheet">
+        <SafeAreaView style={styles.modal}>
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>Winkels</Text>
+            <Pressable onPress={close}>
+              <Text style={styles.closeBtn}>Klaar</Text>
+            </Pressable>
+          </View>
+
+          <TextInput
+            style={styles.search}
+            value={search}
+            onChangeText={setSearch}
+            placeholder="Zoek of voeg winkel toe…"
+            placeholderTextColor={Colors.textMuted}
+            autoFocus
+            returnKeyType="done"
+            onSubmitEditing={() => {
+              if (!trimmed) return;
+              if (!exactMatch) addAndSelect(trimmed);
+              else toggle(trimmed);
+            }}
+          />
+
+          <ScrollView contentContainerStyle={styles.list}>
+            {trimmed && !exactMatch && (
               <Pressable
-                key={opt.value}
-                style={[styles.chip, selected && styles.chipSelected]}
-                onPress={() => toggle(opt.value)}
+                style={styles.freeTextRow}
+                onPress={() => addAndSelect(trimmed)}
               >
-                <Text style={[styles.chipText, selected && styles.chipTextSelected]}>
-                  {opt.label}
-                </Text>
+                <Text style={styles.freeTextLabel}>"{trimmed}" toevoegen</Text>
               </Pressable>
-            );
-          })}
-        </View>
-      )}
+            )}
 
-      <View style={styles.addRow}>
-        <TextInput
-          style={styles.input}
-          value={newStore}
-          onChangeText={setNewStore}
-          placeholder="Winkel toevoegen…"
-          placeholderTextColor={Colors.textMuted}
-          onSubmitEditing={addStore}
-          returnKeyType="done"
-        />
-        <Pressable style={styles.addBtn} onPress={addStore}>
-          <Text style={styles.addBtnText}>+</Text>
-        </Pressable>
-      </View>
-    </View>
+            {filtered.map((store) => {
+              const selected = value.includes(store.name);
+              return (
+                <Pressable
+                  key={store.id}
+                  style={styles.row}
+                  onPress={() => toggle(store.name)}
+                >
+                  <Text style={styles.rowText}>{store.name}</Text>
+                  {selected && <Text style={styles.checkmark}>✓</Text>}
+                </Pressable>
+              );
+            })}
+          </ScrollView>
+        </SafeAreaView>
+      </Modal>
+    </>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { gap: 10 },
-  label: { fontFamily: Fonts.bodySemiBold, fontSize: 13, color: Colors.textSecondary },
-  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
-  chip: {
-    borderRadius: Radius.full,
-    paddingHorizontal: 14,
-    paddingVertical: 7,
-    backgroundColor: Colors.surface,
-    borderWidth: 1.5,
-    borderColor: Colors.border,
-  },
-  chipSelected: {
-    backgroundColor: `${Colors.primary}15`,
-    borderColor: Colors.primary,
-  },
-  chipText: { fontFamily: Fonts.bodySemiBold, fontSize: 13, color: Colors.textSecondary },
-  chipTextSelected: { color: Colors.primaryDark },
-  addRow: { flexDirection: 'row', gap: 8, alignItems: 'center' },
-  input: {
-    flex: 1,
+  trigger: {
     backgroundColor: Colors.surface,
     borderRadius: Radius.md,
     paddingHorizontal: 14,
     paddingVertical: 12,
+    borderWidth: 1.5,
+    borderColor: Colors.border,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  triggerText: {
+    fontFamily: Fonts.body,
+    fontSize: 16,
+    color: Colors.text,
+    flex: 1,
+  },
+  placeholder: { color: Colors.textMuted },
+  arrow: { color: Colors.textMuted, fontSize: 14 },
+  modal: { flex: 1, backgroundColor: Colors.background },
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border,
+  },
+  modalTitle: { fontFamily: Fonts.heading, fontSize: 20, color: Colors.text },
+  closeBtn: { fontFamily: Fonts.bodySemiBold, fontSize: 16, color: Colors.primary },
+  search: {
+    margin: 12,
+    backgroundColor: Colors.surface,
+    borderRadius: Radius.md,
+    paddingHorizontal: 14,
+    paddingVertical: 11,
     fontFamily: Fonts.body,
     fontSize: 16,
     color: Colors.text,
     borderWidth: 1.5,
     borderColor: Colors.border,
   },
-  addBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: Radius.md,
-    backgroundColor: Colors.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
+  list: { paddingBottom: 40 },
+  freeTextRow: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border,
   },
-  addBtnText: { fontSize: 24, color: '#FFFFFF', lineHeight: 28 },
+  freeTextLabel: {
+    fontFamily: Fonts.bodySemiBold,
+    fontSize: 14,
+    color: Colors.primary,
+  },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border,
+  },
+  rowText: { fontFamily: Fonts.body, fontSize: 16, color: Colors.text, flex: 1 },
+  checkmark: { fontSize: 16, color: Colors.primary, fontFamily: Fonts.bodySemiBold },
 });

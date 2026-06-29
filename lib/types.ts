@@ -55,6 +55,12 @@ export interface Cheese {
   _schemaVersion: number;
 }
 
+export interface Store {
+  id: string;
+  name: string;
+  createdAt: number;
+}
+
 export interface Rating {
   userId: string;
   cheeseId: string;
