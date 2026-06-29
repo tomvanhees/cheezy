@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -8,6 +8,8 @@ import {
   StyleSheet,
   Image,
   ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
@@ -36,6 +38,14 @@ export default function EditCheeseScreen() {
   const [producer, setProducer] = useState(cheese?.producer ?? '');
   const [locations, setLocations] = useState<string[]>(cheese?.purchaseLocations ?? []);
   const [imageUri, setImageUri] = useState<string | undefined>();
+
+  const scrollRef = useRef<ScrollView>(null);
+  const scrollOffsetY = useRef(0);
+  const scrollViewHeight = useRef(0);
+  const focusedInputRef = useRef<TextInput | null>(null);
+
+  const nameRef = useRef<TextInput>(null);
+  const producerRef = useRef<TextInput>(null);
 
   const { data: cheeseFamilyOptions = CHEESE_FAMILIES.map((f) => ({ value: f.value, label: f.label })) } = useQuery({
     queryKey: ['options', 'cheeseFamilies'],
@@ -90,12 +100,28 @@ export default function EditCheeseScreen() {
   const currentImageUri = imageUri ?? cheese.imageUrl;
 
   return (
-    <>
+    <KeyboardAvoidingView
+      behavior={Platform.OS === 'android' ? 'padding' : undefined}
+      style={{ flex: 1 }}
+    >
       <Stack.Screen options={{ title: 'Kaas bewerken' }} />
       <ScrollView
+        ref={scrollRef}
         style={styles.scroll}
         contentContainerStyle={styles.content}
         keyboardShouldPersistTaps="handled"
+        automaticallyAdjustKeyboardInsets
+        onScroll={(e) => { scrollOffsetY.current = e.nativeEvent.contentOffset.y; }}
+        scrollEventThrottle={100}
+        onLayout={(e) => {
+          const newHeight = e.nativeEvent.layout.height;
+          const prevHeight = scrollViewHeight.current;
+          scrollViewHeight.current = newHeight;
+          // Only scroll when producer (bottom input) is focused — name is always visible near top
+          if (Platform.OS === 'android' && focusedInputRef.current === producerRef.current && newHeight < prevHeight) {
+            requestAnimationFrame(() => scrollRef.current?.scrollToEnd({ animated: true }));
+          }
+        }}
       >
         {/* Image picker */}
         <View style={styles.imageSection}>
@@ -119,10 +145,12 @@ export default function EditCheeseScreen() {
         <View style={styles.field}>
           <Text style={styles.fieldLabel}>Naam</Text>
           <TextInput
+            ref={nameRef}
             style={styles.input}
             value={name}
             onChangeText={setName}
             placeholderTextColor={Colors.textMuted}
+            onFocus={() => { focusedInputRef.current = nameRef.current; }}
           />
         </View>
 
@@ -145,11 +173,13 @@ export default function EditCheeseScreen() {
         <View style={styles.field}>
           <Text style={styles.fieldLabel}>Producent / Merk</Text>
           <TextInput
+            ref={producerRef}
             style={styles.input}
             value={producer}
             onChangeText={setProducer}
             placeholder="Bijv. Beemster, Président"
             placeholderTextColor={Colors.textMuted}
+            onFocus={() => { focusedInputRef.current = producerRef.current; }}
           />
         </View>
 
@@ -174,7 +204,7 @@ export default function EditCheeseScreen() {
           }
         </Pressable>
       </ScrollView>
-    </>
+    </KeyboardAvoidingView>
   );
 }
 

@@ -8,6 +8,7 @@ import {
   StyleSheet,
   Modal,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors, Fonts, Radius } from '@/lib/theme';
 import { ORIGINS } from '@/lib/cheeseData';
 
@@ -19,19 +20,15 @@ interface Props {
 export function OriginPicker({ value, onChange }: Props) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
-  const [expanded, setExpanded] = useState<string | null>(null);
 
-  const filtered = ORIGINS.filter(
-    (o) =>
-      o.country.toLowerCase().includes(search.toLowerCase()) ||
-      o.regions.some((r) => r.toLowerCase().includes(search.toLowerCase()))
+  const filtered = ORIGINS.filter((o) =>
+    o.country.toLowerCase().includes(search.toLowerCase())
   );
 
   const select = (v: string) => {
     onChange(v);
     setOpen(false);
     setSearch('');
-    setExpanded(null);
   };
 
   return (
@@ -48,7 +45,7 @@ export function OriginPicker({ value, onChange }: Props) {
       </Pressable>
 
       <Modal visible={open} animationType="slide" presentationStyle="pageSheet">
-        <View style={styles.modal}>
+        <SafeAreaView style={styles.modal}>
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>Herkomst</Text>
             <Pressable onPress={() => { setOpen(false); setSearch(''); }}>
@@ -74,38 +71,16 @@ export function OriginPicker({ value, onChange }: Props) {
             )}
 
             {filtered.map((origin) => (
-              <View key={origin.country}>
-                <Pressable
-                  style={styles.countryRow}
-                  onPress={() =>
-                    setExpanded(expanded === origin.country ? null : origin.country)
-                  }
-                >
-                  <Text style={styles.countryText}>{origin.country}</Text>
-                  <View style={styles.countryRight}>
-                    <Pressable onPress={() => select(origin.country)} style={styles.selectCountryBtn}>
-                      <Text style={styles.selectCountryText}>Selecteer</Text>
-                    </Pressable>
-                    <Text style={styles.expandArrow}>
-                      {expanded === origin.country ? '▴' : '▾'}
-                    </Text>
-                  </View>
-                </Pressable>
-
-                {expanded === origin.country &&
-                  origin.regions.map((region) => (
-                    <Pressable
-                      key={region}
-                      style={styles.regionRow}
-                      onPress={() => select(`${origin.country} — ${region}`)}
-                    >
-                      <Text style={styles.regionText}>{region}</Text>
-                    </Pressable>
-                  ))}
-              </View>
+              <Pressable
+                key={origin.country}
+                style={styles.countryRow}
+                onPress={() => select(origin.country)}
+              >
+                <Text style={styles.countryText}>{origin.country}</Text>
+              </Pressable>
             ))}
           </ScrollView>
-        </View>
+        </SafeAreaView>
       </Modal>
     </>
   );
@@ -167,29 +142,10 @@ const styles = StyleSheet.create({
     color: Colors.primary,
   },
   countryRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
     paddingHorizontal: 16,
     paddingVertical: 14,
     borderBottomWidth: 1,
     borderBottomColor: Colors.border,
-    justifyContent: 'space-between',
   },
-  countryText: { fontFamily: Fonts.bodyBold, fontSize: 16, color: Colors.text },
-  countryRight: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  selectCountryBtn: {
-    backgroundColor: `${Colors.primary}22`,
-    borderRadius: Radius.full,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-  },
-  selectCountryText: { fontFamily: Fonts.bodySemiBold, fontSize: 12, color: Colors.primaryDark },
-  expandArrow: { color: Colors.textMuted, fontSize: 12 },
-  regionRow: {
-    paddingHorizontal: 32,
-    paddingVertical: 11,
-    borderBottomWidth: 1,
-    borderBottomColor: `${Colors.border}88`,
-  },
-  regionText: { fontFamily: Fonts.body, fontSize: 15, color: Colors.textSecondary },
+  countryText: { fontFamily: Fonts.body, fontSize: 16, color: Colors.text },
 });

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -9,6 +9,8 @@ import {
   TextInput,
   Alert,
   ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useQueryClient, useQuery } from '@tanstack/react-query';
@@ -68,6 +70,12 @@ export default function CheeseDetailScreen() {
   const myRating = ratings.find((r) => r.userId === user?.id);
   const [myNote, setMyNote] = useState(myRating?.note ?? '');
   const [editingNote, setEditingNote] = useState(false);
+  const scrollRef = useRef<ScrollView>(null);
+  const noteInputRef = useRef<TextInput>(null);
+  const scrollOffsetY = useRef(0);
+  const scrollViewHeight = useRef(0);
+  const editingNoteRef = useRef(false);
+  editingNoteRef.current = editingNote;
 
   // Keep note in sync when rating is loaded
   useEffect(() => {
@@ -119,7 +127,10 @@ export default function CheeseDetailScreen() {
   }
 
   return (
-    <>
+    <KeyboardAvoidingView
+      behavior={Platform.OS === 'android' ? 'padding' : undefined}
+      style={{ flex: 1 }}
+    >
       <Stack.Screen
         options={{
           title: cheese.name,
@@ -135,7 +146,22 @@ export default function CheeseDetailScreen() {
           ),
         }}
       />
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView
+        ref={scrollRef}
+        contentContainerStyle={styles.content}
+        keyboardShouldPersistTaps="handled"
+        automaticallyAdjustKeyboardInsets
+        onScroll={(e) => { scrollOffsetY.current = e.nativeEvent.contentOffset.y; }}
+        scrollEventThrottle={100}
+        onLayout={(e) => {
+          const newHeight = e.nativeEvent.layout.height;
+          const prevHeight = scrollViewHeight.current;
+          scrollViewHeight.current = newHeight;
+          if (Platform.OS === 'android' && editingNoteRef.current && newHeight < prevHeight) {
+            requestAnimationFrame(() => scrollRef.current?.scrollToEnd({ animated: true }));
+          }
+        }}
+      >
         {/* Hero image */}
         {cheese.imageUrl ? (
           <Image source={{ uri: cheese.imageUrl }} style={styles.heroImage} resizeMode="cover" />
@@ -214,6 +240,7 @@ export default function CheeseDetailScreen() {
               {editingNote ? (
                 <View style={styles.noteEditRow}>
                   <TextInput
+                    ref={noteInputRef}
                     style={styles.noteInput}
                     value={myNote}
                     onChangeText={setMyNote}
@@ -238,7 +265,7 @@ export default function CheeseDetailScreen() {
           )}
         </View>
       </ScrollView>
-    </>
+    </KeyboardAvoidingView>
   );
 }
 
